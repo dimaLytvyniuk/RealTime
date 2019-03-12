@@ -7,7 +7,7 @@
         xmlns:dvc="clr-namespace:System.Windows.Forms.DataVisualization.Charting;assembly=System.Windows.Forms.DataVisualization"
         xmlns:local="clr-namespace:Laba_3"
         mc:Ignorable="d"
-        Title="Лабораторна робота №3 - Інтерполяція функцій" Height="700" Width="1240"  WindowStartupLocation="CenterScreen" Icon="favicon.ico">
+        Title="Лабораторна робота №1" Height="800" Width="1240"  WindowStartupLocation="CenterScreen" Icon="favicon.ico">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -25,5 +25,9 @@
         </WindowsFormsHost>
         <Label Content="Time: " HorizontalAlignment="Left" Margin="30,581.6,0,-403.6" Grid.Row="3" VerticalAlignment="Top" FontSize="18"/>
         <Label x:Name="measuredTime" Content="Label" HorizontalAlignment="Left" Margin="97,581.6,0,-401" Grid.Row="3" VerticalAlignment="Top" RenderTransformOrigin="0.469,2.25" FontSize="18"/>
+        <Label Content="Mx: " HorizontalAlignment="Left" Margin="30,620.6,0,-436.8" Grid.Row="3" VerticalAlignment="Top" FontSize="18"/>
+        <Label x:Name="measured_mx" Content="Label" HorizontalAlignment="Left" Margin="97,620.6,0,-436.8" Grid.Row="3" VerticalAlignment="Top" RenderTransformOrigin="0.469,2.25" FontSize="18"/>
+        <Label Content="Dx: " HorizontalAlignment="Left" Margin="30,664.6,0,-478.4" Grid.Row="3" VerticalAlignment="Top" FontSize="18"/>
+        <Label x:Name="measured_tx" Content="Label" HorizontalAlignment="Left" Margin="97,664.6,0,-478.4" Grid.Row="3" VerticalAlignment="Top" RenderTransformOrigin="0.469,2.25" FontSize="18"/>
     </Grid>
 </Window>

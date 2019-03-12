@@ -29,7 +29,7 @@ namespace Laba_3
             {11, Color.Wheat }
         };
 
-        public static string CreateGraph(Chart chart, Chart chartMD, DataGrid dataGrid, DataGrid dataGridMD)
+        public static string[] CreateGraph(Chart chart, Chart chartMD, DataGrid dataGrid, DataGrid dataGridMD)
         {
             var n = 12;
             var W = 2400;
@@ -40,10 +40,15 @@ namespace Laba_3
             Stopwatch stopwatch = new Stopwatch();
 
             stopwatch.Start();
-            var harmonics = GenerateHarmonics(n, N, W);
+            double[][] harmonics = GenerateHarmonics(n, N, W);
+            double[] combined = Combine(harmonics);
 
             var m = harmonics.Select(x => CalculateM(x)).ToArray();
             var d = harmonics.Select((x, i) => CalculateD(x, m[i])).ToArray();
+
+            var mx = CalculateM(combined);
+            var dx = CalculateD(combined, mx);
+
             stopwatch.Stop();
 
             var elapsedTime = stopwatch.Elapsed;
@@ -51,10 +56,10 @@ namespace Laba_3
             PrintGraph(chart, xAxi, harmonics);
             FillTable(dataGrid, harmonics);
 
-            PrintGraph(chartMD, mdXAxi, new double[][] { m, d });
+            PrintGraph(chartMD, xAxi, new double[][] { combined });
             FillMDTable(dataGridMD, new double[][] { m, d });
 
-            return $"seconds: {elapsedTime.Seconds} milleseconds: {elapsedTime.Milliseconds}";
+            return new[] { $"seconds: {elapsedTime.Seconds} milleseconds: {elapsedTime.Milliseconds}", mx.ToString(), dx.ToString() };
         }
 
         private static void PrintGraph(Chart chart, string[] xAxi, double[][] harmonics)
@@ -140,6 +145,16 @@ namespace Laba_3
             var result = new double[n][];
             for (var i = 0; i < n; i++)
                 result[i] = GenerateSignal(N, (W * (i + 1)) / n);
+
+            return result;
+        }
+
+        private static double[] Combine(double[][] harmonics)
+        {
+            var result = new double[harmonics[0].Length];
+            for (var i = 0; i < harmonics.GetLength(0); i++)
+                for (var j = 0; j < result.Length; j++)
+                    result[j] += harmonics[i][j];
 
             return result;
         }
