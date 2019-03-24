@@ -25,11 +25,9 @@ namespace Laba_3
         public MainWindow()
         {
             InitializeComponent();
-            string[] result = Functions.CreateGraph(chart, chartMD,dataGrid_node, dataGrid_MD);
+            string result = Functions.CreateGraph(chart, chartMD, dataGrid_node);
 
-            measuredTime.Content = "";
-            measured_mx.Content = "";
-            measured_tx.Content = "";
+            measuredTime.Content = result;
         }
     }
 }   

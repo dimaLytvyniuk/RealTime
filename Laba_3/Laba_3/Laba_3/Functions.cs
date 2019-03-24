@@ -13,7 +13,7 @@ namespace Laba_3
 {
     public static class Functions
     {
-        private const int newN = 13;
+        private static Random random = new Random();
 
         private static Dictionary<int, Color> colorDictionary = new Dictionary<int, Color>
         {
@@ -31,43 +31,38 @@ namespace Laba_3
             {11, Color.Wheat }
         };
 
-        public static string[] CreateGraph(Chart chart, Chart chartMD, DataGrid dataGrid, DataGrid dataGridMD)
+        public static string CreateGraph(Chart chart, Chart chartMD, DataGrid dataGrid)
         {
             var n = 12;
             var W = 2400;
             var N = 1024;
-            var T = 3;
+            string[] xAxi = Enumerable.Range(0, N).Select(x => x.ToString()).ToArray();
+            string[] mdXAxi = Enumerable.Range(0, n).Select(x => x.ToString()).ToArray();
+     
+            Stopwatch stopwatch = new Stopwatch();
+            var resultTimeTable = new string[2][];
+            resultTimeTable[0] = new string[10];
+            resultTimeTable[1] = new string[10];
+            
+            for (var newN = 400; newN <= 4000; newN += 400)
+            {
+                double[][] harmonics = GenerateHarmonics(n, newN, W);
+                double[] combined = Combine(harmonics);
 
-            string[] xAxi = Enumerable.Range(0, T * newN).Select(x => x.ToString()).ToArray();
+                stopwatch.Restart();
+                var fpWithOutTable = CalculateFp(combined);
+                stopwatch.Stop();
+                resultTimeTable[0][newN / 400 - 1] = $"{stopwatch.Elapsed.Seconds} seconds {stopwatch.Elapsed.Milliseconds} milliseconds";
 
-            var newGraph = GeneratePeriodicFigure(T);
+                stopwatch.Restart();
+                var fpWithTable = CalculateFpWithTable(combined);
+                stopwatch.Stop();
+                resultTimeTable[1][newN / 400 - 1] = $"{stopwatch.Elapsed.Seconds} seconds {stopwatch.Elapsed.Milliseconds} milliseconds";
+            }
 
-            //string[] mdXAxi = Enumerable.Range(0, n).Select(x => x.ToString()).ToArray();
+            FillTimeTable(dataGrid, resultTimeTable);
 
-            //Stopwatch stopwatch = new Stopwatch();
-
-            //stopwatch.Start();
-            //double[][] harmonics = GenerateHarmonics(n, N, W);
-            //double[] combined = Combine(harmonics);
-
-            //var m = harmonics.Select(x => CalculateM(x)).ToArray();
-            //var d = harmonics.Select((x, i) => CalculateD(x, m[i])).ToArray();
-
-            //var mx = CalculateM(combined);
-            //var dx = CalculateD(combined, mx);
-
-            //stopwatch.Stop();
-
-            //var elapsedTime = stopwatch.Elapsed;
-
-            PrintGraph(chart, xAxi, new double[][] { newGraph });
-            //FillTable(dataGrid, harmonics);
-
-            //PrintGraph(chartMD, xAxi, new double[][] { combined });
-            //FillMDTable(dataGridMD, new double[][] { m, d });
-
-            //return new[] { $"seconds: {elapsedTime.Seconds} milleseconds: {elapsedTime.Milliseconds}", mx.ToString(), dx.ToString() };
-            return new[] { "" };
+            return "";
         }
 
         private static void PrintGraph(Chart chart, string[] xAxi, double[][] harmonics)
@@ -89,41 +84,26 @@ namespace Laba_3
             }
         }
 
-        private static void FillTable(DataGrid dataGrid, double[][] harmonics)
+        private static void FillTimeTable(DataGrid dataGrid, string[][] timeLines)
         {
             dataGrid.Items.Clear();
 
-            for (int i = 0; i < harmonics[0].Length; i++)
+            var n = timeLines[0].Length;
+            
+            for (int i = 0; i < n; i++)
             {
                 var col = new DataGridTextColumn();
-                col.Header = $"X(t{i})";
+                col.Header = $"{(i + 1) * 400}";
                 col.Binding = new Binding(string.Format("[{0}]", i));
                 dataGrid.Columns.Add(col);
             }
 
-            for (var i = 0; i < harmonics.GetLength(0); i++)
-                dataGrid.Items.Add(harmonics[i]);
-        }
-
-        private static void FillMDTable(DataGrid dataGrid, double[][] data)
-        {
-            dataGrid.Items.Clear();
-
-            for (int i = 0; i < data[0].Length; i++)
-            {
-                var col = new DataGridTextColumn();
-                col.Header = $"n{i}";
-                col.Binding = new Binding(string.Format("[{0}]", i));
-                dataGrid.Columns.Add(col);
-            }
-
-            for (var i = 0; i < data.GetLength(0); i++)
-                dataGrid.Items.Add(data[i]);
+            for (var i = 0; i < timeLines.GetLength(0); i++)
+                dataGrid.Items.Add(timeLines[i]);
         }
 
         private static double[] GenerateSignal(int N, double W)
         {
-            var random = new Random();
             var A = random.NextDouble() * 2 + 2;
             var phi = random.NextDouble() * 2 * Math.PI;
 
@@ -167,34 +147,51 @@ namespace Laba_3
             return result;
         }
 
-        private static double[] GenerateFigure()
+        private static double[] CalculateFp(double[] signal)
         {
-            return new double[]
+            var result = new double[signal.Length];
+
+            for (var i = 0; i < signal.Length; i++)
             {
-                3,
-                3,
-                -3,
-                -3,
-                0,
-                0,
-                -3,
-                -3,
-                0,
-                0,
-                -3,
-                -3,
-                3
-            };
+                double Re = 0;
+                double Im = 0;
+                for (var j = 0; j < signal.Length; j++)
+                {
+                    Re += signal[j] * Math.Cos(2 * Math.PI * i * j / signal.Length);
+                    Im += signal[j] * Math.Sin(2 * Math.PI * i * j / signal.Length);
+                }
+                result[i] = Math.Sqrt(Math.Pow(Re, 2) + Math.Pow(Im, 2));
+            }
+
+            return result;
         }
 
-        private static double[] GeneratePeriodicFigure(int T)
+        private static Tuple<double, double>[] GenerateWTable(int N)
         {
-            var result = new double[newN * T];
+            var result = new Tuple<double, double>[N];
+            for (var i = 0; i < N; i++)
+                result[i] = Tuple.Create(Math.Cos(2 * Math.PI * i / N), Math.Sin(2 * Math.PI * i / N));
 
-            for (var i = 0; i < T; i++)
+            return result;
+        }
+
+        private static double[] CalculateFpWithTable(double[] signal)
+        {
+            var result = new double[signal.Length];
+            var wTable = GenerateWTable(signal.Length);
+            var N = signal.Length;
+
+            for (var i = 0; i < signal.Length; i++)
             {
-                var array = GenerateFigure();
-                Array.Copy(array, 0, result, newN * i, newN);
+                double Re = 0;
+                double Im = 0;
+                for (var j = 0; j < signal.Length; j++)
+                {
+                    var w = wTable[(i * j) % N];
+                    Re += signal[j] * w.Item1;
+                    Im += signal[j] * w.Item2;
+                }
+                result[i] = Math.Sqrt(Math.Pow(Re, 2) + Math.Pow(Im, 2));
             }
 
             return result;
