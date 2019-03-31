@@ -18,7 +18,8 @@ namespace Laba_3
         private static Dictionary<int, Color> colorDictionary = new Dictionary<int, Color>
         {
             {0, Color.Red },
-            {1, Color.Orange },
+            {1, Color.Black },
+            {2, Color.Orange },
             {3, Color.Green },
             {4, Color.Blue },
             {5, Color.Pink },
@@ -27,8 +28,7 @@ namespace Laba_3
             {8, Color.Purple },
             {9, Color.Silver },
             {10, Color.Violet },
-            {11, Color.Wheat },
-            {2, Color.Black },
+            {11, Color.Wheat }
         };
 
         public static string CreateGraph(Chart chart, Chart chartMD, DataGrid dataGrid)
@@ -38,11 +38,8 @@ namespace Laba_3
             var N = 1024;
             string[] xAxi = Enumerable.Range(0, N).Select(x => x.ToString()).ToArray();
             string[] mdXAxi = Enumerable.Range(0, n).Select(x => x.ToString()).ToArray();
-     
+
             Stopwatch stopwatch = new Stopwatch();
-            var resultTimeTable = new string[2][];
-            resultTimeTable[0] = new string[10];
-            resultTimeTable[1] = new string[10];
             var stringXAxi = new string[10];
 
             var forGraphTable = new double[2][]
@@ -57,24 +54,23 @@ namespace Laba_3
                 double[] combined = Combine(harmonics);
 
                 stopwatch.Restart();
-                var fpWithOutTable = CalculateFp(combined);
+                var fpWithOutTable = CalculateFpWithTable(combined);
                 stopwatch.Stop();
-                resultTimeTable[0][newN / 400 - 1] = $"{stopwatch.Elapsed.Seconds} seconds {stopwatch.Elapsed.Milliseconds} milliseconds";
                 forGraphTable[0][newN / 400 - 1] = stopwatch.ElapsedMilliseconds;
 
                 stopwatch.Restart();
-                var fpWithTable = CalculateFpWithTable(combined);
+                var fpWithTable = CalculateQuickFp(combined);
                 stopwatch.Stop();
-                resultTimeTable[1][newN / 400 - 1] = $"{stopwatch.Elapsed.Seconds} seconds {stopwatch.Elapsed.Milliseconds} milliseconds";
                 forGraphTable[1][newN / 400 - 1] = stopwatch.ElapsedMilliseconds;
 
                 stringXAxi[newN / 400 - 1] = newN.ToString();
             }
-
-            FillTimeTable(dataGrid, resultTimeTable);
             PrintGraph(chart, stringXAxi, forGraphTable);
 
-            return "";
+            //PrintGraph(chart, xAxi, new double[][] { combined });
+            //PrintGraph(chartMD, xAxi, new double[][] { fpWithTables });
+
+            return $"";
         }
 
         private static void PrintGraph(Chart chart, string[] xAxi, double[][] harmonics)
@@ -191,7 +187,7 @@ namespace Laba_3
         {
             var result = new double[signal.Length];
             var wTable = GenerateWTable(signal.Length);
-            var N = signal.Length;
+            var N = signal.Length / 2 - 1;
 
             for (var i = 0; i < signal.Length; i++)
             {
@@ -203,6 +199,74 @@ namespace Laba_3
                     Re += signal[j] * w.Item1;
                     Im += signal[j] * w.Item2;
                 }
+                result[i] = Math.Sqrt(Math.Pow(Re, 2) + Math.Pow(Im, 2));
+            }
+
+            return result;
+        }
+
+        private static Tuple<double, double>[] CalculateFIIp(double[] signal, Tuple<double, double>[] WTableN2)
+        {
+            var N = signal.Length;
+            var result = new Tuple<double, double>[N];
+
+            for (var i = 0; i < signal.Length; i++)
+            {
+                double Re = 0;
+                double Im = 0;
+                for (var j = 0; j < N; j+= 2)
+                {
+                    var w = WTableN2[(i * j / 2) % (N / 2)];
+                    Re += signal[j] * w.Item1;
+                    Im += signal[j] * w.Item2;
+                }
+                result[i] = Tuple.Create(Re, Im);
+            }
+
+            return result;
+        }
+
+        private static Tuple<double, double>[] CalculateFIp(double[] signal, Tuple<double, double>[] WTableN2, Tuple<double, double>[] WTableN)
+        {
+            var N = signal.Length;
+            var result = new Tuple<double, double>[N];
+
+            for (var i = 0; i < signal.Length; i++)
+            {
+                double Re = 0;
+                double Im = 0;
+                for (var j = 1; j < N; j+= 2)
+                {
+                    var w = WTableN2[(i * (j - 1) / 2) % (N / 2)];
+                    Re += signal[j] * w.Item1;
+                    Im += signal[j] * w.Item2;
+                }
+                var wP = WTableN[i];
+                result[i] = Tuple.Create(Re * wP.Item1, Im * wP.Item2);
+            }
+
+            return result;
+        }
+
+        private static double[] CalculateQuickFp(double[] signal)
+        {
+            var result = new double[signal.Length];
+            var wTableN2 = GenerateWTable(signal.Length / 2);
+            var wTableN = GenerateWTable(signal.Length);
+
+            var fpsTasks = new Task<Tuple<double, double>[]>[2];
+
+            fpsTasks[0] = Task.Factory.StartNew(() => CalculateFIp(signal, wTableN2, wTableN));
+            fpsTasks[1] = Task.Factory.StartNew(() => CalculateFIIp(signal, wTableN2));
+            Task.WhenAll(fpsTasks);
+
+            var fpI = fpsTasks[0].Result;
+            var fpII = fpsTasks[1].Result;
+
+            for (var i = 0; i < signal.Length; i++)
+            {
+                double Re = fpI[i].Item1 + fpII[i].Item1;
+                double Im = fpI[i].Item2 + fpII[i].Item2;
                 result[i] = Math.Sqrt(Math.Pow(Re, 2) + Math.Pow(Im, 2));
             }
 
