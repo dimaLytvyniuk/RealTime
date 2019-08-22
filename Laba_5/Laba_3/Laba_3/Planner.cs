@@ -107,10 +107,10 @@ namespace Laba_3
             return;
         }
 
-        public static PlanObject WorkWithTask(PlanObject planObject)
+        public static PlanObject WorkWithTask(PlanObject planObject, DateTime timeIn)
         {
             planObject.Task.Start();
-            planObject.IsCanceled = planObject.Task.Wait((int)(planObject.Deadline - DateTime.Now).TotalMilliseconds);
+            planObject.IsCanceled = planObject.Task.Wait((int)(planObject.Deadline - timeIn).TotalMilliseconds);
 
             return planObject;
         }
@@ -126,8 +126,9 @@ namespace Laba_3
             sizeOfQueue.Add(queue.Count);
             if (queue.TryDequeue(out PlanObject planObject))
             {
-                if (planObject.Deadline > DateTime.Now)
-                    return Task.Run(() => WorkWithTask(planObject));
+                var timeIn = DateTime.Now;
+                if (planObject.Deadline > timeIn)
+                    return Task.Run(() => WorkWithTask(planObject, timeIn));
                 else
                 {
                     planObject.TimeOut = DateTime.Now;
